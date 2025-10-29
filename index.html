@@ -1,5 +1,7 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,8 +40,8 @@
       
       <div class="text-center mb-4">
         <button class="btn btn-outline-secondary" onclick="listarTodos()">Listar todos os códigos</button>
+        <button class="btn btn-outline-success" onclick=" abrirLogs()">Ver Logs</button>
       </div>
-
 
       <div class="table-container">
         <table class="table table-striped table-hover text-center align-middle">
@@ -65,9 +67,47 @@
     </footer>
   </div>
 
+ <div class="modal fade" id="modalLogs" tabindex="-1" aria-labelledby="modalLogsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+         <div class="modal-header">
+        <h5 class="modal-title" id="modalLogsLabel">Logs da API</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+         </div>
+
+    <div class="modal-body">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+                <th>ID</th>
+                <th>API</th>
+                <th>Método</th>
+                <th>Resultado</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+             <tbody id="tabelaLogs">
+            <tr><td colspan="5">Carregando logs...</td></tr>
+             </tbody>
+        </table>
+        </div>
+         </div>
+    </div>
+ </div>
+
+
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
   <script>
     
     const tabela = document.getElementById('tabelaNCM');
+    const matricula = '451111';
+
+    async function registrarLog(api, metodo, resultado) {
+  
+        await fetch(`https://www.piway.com.br/unoesc/api/inserir/log/${matricula}/${api}/${metodo}/${resultado}`);
+}
 
     async function buscarDescricao() {
       const descricao = document.getElementById('descricao').value.trim();
@@ -88,6 +128,10 @@
         console.error(erro);
         tabela.innerHTML = `<tr><td colspan="5" class="text-danger">Erro ao buscar dados da API.</td></tr>`;
       }
+
+      registrarLog("BrasilAPI", "buscarDescricao", 1);
+
+
     }
 
     async function buscarCodigo() {
@@ -105,6 +149,8 @@
         console.error(erro);
         tabela.innerHTML = `<tr><td colspan="5" class="text-danger">Erro ao buscar dados da API.</td></tr>`;
       }
+
+      registrarLog("BrasilAPI", "buscarCodigo", 1);
     }
 
     async function listarTodos() {
@@ -118,6 +164,8 @@
         console.error(erro);
         tabela.innerHTML = `<tr><td colspan="5" class="text-danger">Erro ao carregar lista completa.</td></tr>`;
       }
+
+      registrarLog("BrasilAPI", "ListarTodos", 1);
     }
 
     function exibirTabela(lista) {
@@ -130,7 +178,42 @@
           <td>${item.tipo_ato || ''} ${item.numero_ato || ''}/${item.ano_ato || ''}</td>
         </tr>
       `).join('');
+
     }
+
+
+    async function abrirLogs(){
+    const tabelaLogs = document.getElementById("tabelaLogs");
+    tabelaLogs.innerHTML = `<tr><td colspan="5">Carregando...</td></tr>`;
+
+  try{
+    const r = await fetch(`https://www.piway.com.br/unoesc/api/logs/${matricula}`);
+    const logs = await r.json();
+
+    if (!logs.length){
+      tabelaLogs.innerHTML = `<tr><td colspan="5">Nenhum log.</td></tr>`;
+    } else {
+      tabelaLogs.innerHTML = logs.map(l => `
+         <tr>
+          <td>${l.id || '-'}</td>
+          <td>${l.descapi || '-'}</td>
+          <td>${l.descmetodo || '-'}</td>
+          <td>${l.descresultado || '-'}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="excluirLog(${l.id})">X</button></td>
+        </tr>
+      `).join("");
+    }
+
+    new bootstrap.Modal(document.getElementById('modalLogs')).show();
+
+  } catch{
+    tabelaLogs.innerHTML = `<tr><td colspan="5">Erro ao carregar.</td></tr>`;
+  }
+}
+    async function excluirLog(id){
+    await fetch(`https://www.piway.com.br/unoesc/api/excluir/log/${id}/aluno/${matricula}`);
+    abrirLogs();
+}
   </script>
 </body>
 </html>
